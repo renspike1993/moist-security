@@ -1,0 +1,40 @@
+<!-- templates/users.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Person Faces</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #2c3e50; }
+        table { border-collapse: collapse; width: 60%; margin: 20px 0; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+        th { background-color: #34495e; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Person Faces Count</h1>
+    {% if results %}
+        <table>
+            <tr>
+                <th>Full Name</th>
+                <th>Detected Faces</th>
+                <th>Action</th>
+            </tr>
+            {% for row in results %}
+            <tr>
+                <td>{{ row.id }}</td>                
+                <td>{{ row.file_name }}-({{ row.cnt }}) </td>
+                <td>{{ row.folder_name }} </td>
+                <td>
+                    <form action="{{ url_for('open_src', folder_name=row.folder_name, file_name=row.file_name) }}" method="post">
+                 </td>
+                    <td></td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No data found.</p>
+    {% endif %}
+</body>
+</html>

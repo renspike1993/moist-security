@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Images for {{ owner_name }}</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center;
+        }
+        .gallery { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            justify-content: center; 
+        }
+        .gallery img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: transform 0.3s;
+        }
+        .gallery img:hover {
+            transform: scale(1.1);
+        }
+        .image-item {
+            text-align: center;
+        }
+        .filename {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .profile-image {
+            display: block;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            border: 3px solid #2c3e50;
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+        .buttons button {
+            padding: 5px 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .buttons button:hover {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Display User's Profile Image -->
+    <h1>Add Image for {{ owner_name }}</h1>
+    <img class="profile-image" 
+         src="{{ url_for('static', filename='' + owner_name + '.jpg') }}" 
+         alt="{{ owner_name }}">
+
+    <button onclick="(mod.style.display!='display')?mod.style.display='none' : mod.style.display='display'">Close</button>
+
+<dialog id="mod" open>
+    <!-- Display Image Gallery -->
+    <div class="gallery">
+        {% if images %}
+            {% for image in images %}
+                <div class="image-item">
+                    <img src="{{ url_for('static', filename=image.folder_name ~ '/' ~ image.file_name) }}" alt="{{ image.id }}">
+                    <div class="filename">
+                        <strong>ID:</strong> {{ owner_id }}
+                        <div class="buttons">
+                            <form action="{{ url_for('assign_id', face_id=image.id, owner_id=owner_id) }}" method="post">
+                                <button type="submit">Assign to {{ image.id }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No images found for {{ owner_name }}.</p>
+        {% endif %}
+    </div>
+</dialog>
+   <script type="text/javascript">
+        var ms = 'block';
+    </script>
+</body>
+</html>
