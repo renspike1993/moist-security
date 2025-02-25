@@ -10,29 +10,35 @@ async function captureFace(canvas, ctx, video) {
     if (!model) return;
 
     const predictions = await model.estimateFaces(video, false);
+    
     if (predictions.length > 0) {
-        canvas.style.display = "block";
-        const face = predictions[0];
-        const [x, y, width, height] = face.topLeft.concat(face.bottomRight);
+        const face = predictions[0];  // Take the first detected face
+
+        const x = face.topLeft[0];
+        const y = face.topLeft[1];
+        const width = face.bottomRight[0] - x;
+        const height = face.bottomRight[1] - y;
+
+        canvas.width = 200; 
+        canvas.height = 200;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, x, y, width - x, height - y, 0, 0, 200, 200);
+        ctx.drawImage(video, x, y, width, height, 0, 0, canvas.width, canvas.height);
 
+        // Convert canvas to Blob and store
         canvas.toBlob(blob => {
             if (blob) {
                 imageBlobs.push(blob);
-                console.log("Captured Face:", imageBlobs.length);
+                console.log(`Captured Face ${imageBlobs.length}/3`);
 
-                // Trigger alert and send images when reaching 5
-                if (imageBlobs.length === 5) {
-                    console.log("5 face captures reached. Starting recognition...");
+                // Once 3 images are captured, send them for recognition
+                if (imageBlobs.length === 3) {
+                    console.log("3 face captures reached. Starting recognition...");
                     sendImagesToFlask(imageBlobs);
-                    imageBlobs = []; // Clear for next batch
+                    imageBlobs = []; // Clear array for next batch
                 }
             }
         }, "image/jpeg", 0.9);
-    } else {
-        canvas.style.display = "none";
     }
 }
 
@@ -46,7 +52,17 @@ function sendImagesToFlask(images) {
         method: "POST",
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            // If response is not OK, attempt to extract JSON error message
+            return response.json().then(err => {
+                throw new Error(err.error || `Server returned ${response.status}`);
+            }).catch(() => {
+                throw new Error(`Server returned ${response.status} - Unable to parse JSON`);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         console.log("Server Response:", data);
         if (data.message) {
@@ -57,7 +73,7 @@ function sendImagesToFlask(images) {
     })
     .catch(error => {
         console.error("Upload error:", error);
-        console.log("Error uploading images.");
+        console.log(`Error uploading images: ${error.message}`);
     });
 }
 
@@ -66,15 +82,22 @@ async function startVideo() {
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
-    video.play();
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.play();
+    } catch (error) {
+        console.error("Error accessing camera:", error);
+        console.log("Could not access camera. Please allow permissions.");
+        return;
+    }
 
     await loadBlazeFace();
 
     setInterval(() => {
         captureFace(canvas, ctx, video);
-    }, 500);
+    }, 500); // Capture every 500ms
 }
 
+// Start video streaming and face detection
 startVideo().catch(console.error);
